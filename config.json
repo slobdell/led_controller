@@ -1,0 +1,11 @@
+{
+    "num_shards": 4,
+    "total_screen_width": 180,
+    "total_screen_height": 101,
+    "brightness_percent": 1.0,
+    "frame_rate": 20,
+    "brg_order": [0, 1, 2],
+    "reverse_rows": false,
+    "reverse_cols": false
+}
+
