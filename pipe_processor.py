@@ -4,6 +4,7 @@ from collections import deque
 from cStringIO import StringIO
 import json
 import struct
+from subprocess import Popen, PIPE
 import sys
 import time
 
@@ -34,12 +35,33 @@ class Globals(object):
     # should be reassigned at run time
     FRAME_RATE = 25
 
-PORT = "/dev/serial/by-id/usb-Teensyduino_USB_Serial_1023950-if00"
+
+def get_canonical_device_to_port():
+    canonical_name_to_port = {}
+    process = Popen(["./find_usb_ports.sh"], stdout=PIPE)
+    (output, err) = process.communicate()
+    process.wait()
+    for line in [line for line in output.split("\n") if line]:
+        port, canonical_name = line.split(" - ")
+        canonical_name_to_port[canonical_name] = port
+    return canonical_name_to_port
+
+
+def generate_ordered_teensy_ports():
+    device_to_port = get_canonical_device_to_port()
+    for device, port in sorted(device_to_port.items(), key=lambda pair: pair[0]):
+        if "Teensyduino_USB_Serial" in device:
+            yield port
+
+
+# PORT = "/dev/serial/by-id/usb-Teensyduino_USB_Serial_1023950-if00"
 # PORT = "/dev/ttyACM0"
+ORDERED_PORTS = list(generate_ordered_teensy_ports())
+
 # I don't think baud rate actually matters
 BAUD_RATE = 115200
 
-serial_interface = serial.Serial(PORT, BAUD_RATE)
+ordered_serial_interfaces = [serial.Serial(port, BAUD_RATE) for port in ORDERED_PORTS]
 
 
 class PPMState(object):
@@ -137,7 +159,7 @@ def write_frame_to_buffer(np_array):
     # sleep_to_maintain_framerate()
 
     for shard_index in xrange(NUM_SHARDS):
-        # HACK HACK until we get more teensies to test
+        serial_interface = ordered_serial_interfaces[shard_index]
         sharded_np_array = _sharded_np_array(np_array, shard_index)
         serial_interface.write(
             "%s%s" % (
@@ -145,7 +167,6 @@ def write_frame_to_buffer(np_array):
                 _get_image_bytes(sharded_np_array),
             )
         )
-        break
 
 
 def sleep_to_maintain_framerate():
@@ -202,5 +223,5 @@ if __name__ == "__main__":
         for np_array in generate_np_array_frames_from_std():
             write_frame_to_buffer(np_array)
     finally:
-        serial_interface.close()
-
+        for serial_interface in ordered_serial_interfaces:
+            serial_interface.close()
