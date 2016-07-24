@@ -35,6 +35,7 @@ class Globals(object):
     FRAME_RATE = 25
 
 PORT = "/dev/serial/by-id/usb-Teensyduino_USB_Serial_1023950-if00"
+# PORT = "/dev/ttyACM0"
 # I don't think baud rate actually matters
 BAUD_RATE = 115200
 

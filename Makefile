@@ -1,14 +1,15 @@
-VIDEO_INPUT = "vids/blue.mkv"
+VIDEO_INPUT = "vids/amon.mkv"
 
 FRAME_RATE = `cat config.json | jq ".frame_rate"`
 FRAME_WIDTH = `cat config.json | jq ".total_screen_width"`
 FRAME_HEIGHT = `cat config.json | jq ".total_screen_height"`
 
 test:
-	ffmpeg -i $(VIDEO_INPUT) -c:v ppm -r $(FRAME_RATE) -vf "scale=$(FRAME_WIDTH):ih*$(FRAME_WIDTH)/iw, crop=$(FRAME_WIDTH):$(FRAME_HEIGHT)" -f rawvideo -pix_fmt bgr8 - < /dev/null | python pipe_processor.py $(FRAME_RATE)
+	ffmpeg -i $(VIDEO_INPUT) -c:v ppm -r $(FRAME_RATE) -vf "scale=$(FRAME_WIDTH):ih*$(FRAME_WIDTH)/iw, crop=$(FRAME_WIDTH):$(FRAME_HEIGHT)" -f rawvideo - < /dev/null | python pipe_processor.py $(FRAME_RATE)
 
 live:
-	ffmpeg -f v4l2 -video_size 320x240 -framerate $(FRAME_RATE) -pixel_format yuyv422 -i /dev/video1 -c:v ppm -r $(FRAME_RATE) -vf "scale=$(FRAME_WIDTH):ih*$(FRAME_WIDTH)/iw, crop=$(FRAME_WIDTH):$(FRAME_HEIGHT)" -f rawvideo -pix_fmt bgr8 - < /dev/null | python pipe_processor.py $(FRAME_RATE)
+	# ffmpeg -f v4l2 -video_size 320x240 -framerate $(FRAME_RATE) -pixel_format yuyv422 -i /dev/video1 -c:v ppm -r $(FRAME_RATE) -vf "scale=$(FRAME_WIDTH):ih*$(FRAME_WIDTH)/iw, crop=$(FRAME_WIDTH):$(FRAME_HEIGHT)" -f rawvideo -pix_fmt bgr8 - < /dev/null | python pipe_processor.py $(FRAME_RATE)
+	ffmpeg -f v4l2 -video_size 320x240 -framerate $(FRAME_RATE) -pixel_format yuyv422 -i /dev/video1 -c:v ppm -r $(FRAME_RATE) -vf "scale=$(FRAME_WIDTH):-1, crop=$(FRAME_WIDTH):$(FRAME_HEIGHT)" -f rawvideo -pix_fmt bgr8 - < /dev/null | python pipe_processor.py $(FRAME_RATE)
 
 # initial res was 720...404
 ppm:
