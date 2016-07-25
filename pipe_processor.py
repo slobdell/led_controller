@@ -8,10 +8,15 @@ from subprocess import Popen, PIPE
 import sys
 import time
 
+# requires futures
+import concurrent.futures
+
 # requires Pillow==2.7.0
 from PIL import Image
+
 # requires numpy
 import numpy as np
+
 # requires pyserial
 import serial
 
@@ -24,6 +29,7 @@ frame_rate_maintainer = deque()
 
 BYTES_PER_PIXEL = 3
 NUM_SHARDS = config["num_shards"]
+GLOBAL_THREAD_POOL = concurrent.futures.ThreadPoolExecutor(max_workers=NUM_SHARDS)
 BRIGHTNESS_MULTIPLIER = min(1.0, config.get("brightness_percent", 1.0))
 BRG_ORDER = config["brg_order"]
 
@@ -142,6 +148,19 @@ META_SEQUENCE = "{control_sequence}{zero_for_framerate}{frame_rate}{zero_for_wid
 )
 
 
+def _submit_frame_to_serial_interface(serial_interface, sharded_np_array):
+    serial_interface.write(
+        "%s%s" % (
+            _get_frame_meta_bytes(sharded_np_array),
+            _get_image_bytes(sharded_np_array),
+        )
+    )
+
+
+def _block_for_futures(futures):
+    [future.result() for future in futures]
+
+
 def write_frame_to_buffer(np_array):
     # don't allow 255 in the byte sequence for the control header
     np_array = (np_array * BRIGHTNESS_MULTIPLIER).astype(np.uint8)
@@ -158,15 +177,16 @@ def write_frame_to_buffer(np_array):
 
     # sleep_to_maintain_framerate()
 
+    futures = []
     for shard_index in xrange(NUM_SHARDS):
-        serial_interface = ordered_serial_interfaces[shard_index]
-        sharded_np_array = _sharded_np_array(np_array, shard_index)
-        serial_interface.write(
-            "%s%s" % (
-                _get_frame_meta_bytes(sharded_np_array),
-                _get_image_bytes(sharded_np_array),
+        futures.append(
+            GLOBAL_THREAD_POOL.submit(
+                _submit_frame_to_serial_interface,
+                ordered_serial_interfaces[shard_index],
+                _sharded_np_array(np_array, shard_index),
             )
         )
+    _block_for_futures(futures)
 
 
 def sleep_to_maintain_framerate():
