@@ -1,11 +1,12 @@
 {
     "num_shards": 1,
     "total_screen_width": 75,
-    "total_screen_height": 56,
-    "brightness_percent": 0.1,
+    "total_screen_height": 32,
+    "brightness_percent": 0.05,
     "frame_rate": 20,
     "brg_order": [0, 1, 2],
-    "reverse_rows": false,
-    "reverse_cols": false
+    "alternate_led_strips": false,
+    "reverse_rows": true,
+    "reverse_cols": true
 }
 

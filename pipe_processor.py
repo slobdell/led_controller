@@ -2,6 +2,7 @@
 
 from collections import deque
 from cStringIO import StringIO
+import math
 import json
 import struct
 from subprocess import Popen, PIPE
@@ -27,8 +28,11 @@ with open("config.json", "rb") as f:
 MAX_TAILING_SECONDS = 10
 frame_rate_maintainer = deque()
 
+MAX_STRIPS_PER_TEENSY = 8
+ROWS_PER_STRIP = int(math.ceil(config["total_screen_height"] / MAX_STRIPS_PER_TEENSY))
 BYTES_PER_PIXEL = 3
 NUM_SHARDS = config["num_shards"]
+ALTERNATE_LED_STRIPS = config["alternate_led_strips"]
 GLOBAL_THREAD_POOL = concurrent.futures.ThreadPoolExecutor(max_workers=NUM_SHARDS)
 BRIGHTNESS_MULTIPLIER = min(1.0, config.get("brightness_percent", 1.0))
 BRG_ORDER = config["brg_order"]
@@ -61,8 +65,10 @@ def generate_ordered_teensy_ports():
 
 
 # PORT = "/dev/serial/by-id/usb-Teensyduino_USB_Serial_1023950-if00"
-# PORT = "/dev/ttyACM0"
-ORDERED_PORTS = list(generate_ordered_teensy_ports())
+# ORDERED_PORTS = list(generate_ordered_teensy_ports())
+
+# mac dev only
+ORDERED_PORTS = ["/dev/tty.usbmodem1023951"]
 
 # I don't think baud rate actually matters
 BAUD_RATE = 115200
@@ -168,6 +174,7 @@ def write_frame_to_buffer(np_array):
 
     # swap rgb bits to match LED byte order
     np_array = np_array[:, :, BRG_ORDER]
+    _mutate_for_alternating_led_strips(np_array)
 
     if SHOULD_REVERSE_ROWS:
         np_array = np_array[::-1, :, :]
@@ -175,7 +182,7 @@ def write_frame_to_buffer(np_array):
     if SHOULD_REVERSE_COLS:
         np_array = np_array[:, ::-1, :]
 
-    # sleep_to_maintain_framerate()
+    sleep_to_maintain_framerate()
 
     futures = []
     for shard_index in xrange(NUM_SHARDS):
@@ -187,6 +194,20 @@ def write_frame_to_buffer(np_array):
             )
         )
     _block_for_futures(futures)
+
+
+def _mutate_for_alternating_led_strips(np_array):
+    """ Difficult to visualize this mentally, but dependong on the set up
+    with the octo, we might need to swap the column order on every other teensy
+    output (as opposed to alternating what side the wires are stuck into. """
+    if not ALTERNATE_LED_STRIPS:
+        return
+
+    for strip_offset in range(MAX_STRIPS_PER_TEENSY):
+        if strip_offset % 2 == 0:
+            continue
+        current_row = strip_offset * ROWS_PER_STRIP
+        np_array[current_row: current_row + ROWS_PER_STRIP] = np_array[current_row: current_row + ROWS_PER_STRIP, ::-1, :]
 
 
 def sleep_to_maintain_framerate():
