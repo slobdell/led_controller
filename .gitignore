@@ -1,2 +1,4 @@
 *.un~
 .DS_Store
+env
+vids/

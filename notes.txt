@@ -1,0 +1,15 @@
+100 ohm resistor
+for dev on raspberry, disconnect video input
+frame rate needs to be 15 or below for video input
+rows in settings always need to be multiple of 8
+DO NOT SLEEP FOR FRAMERATE ON LIVE
+
+Octo outputs:
+Facing outward from teensy, left output is top, right is bottom
+orange
+green
+blue
+brown
+orange
+green
+blue brown

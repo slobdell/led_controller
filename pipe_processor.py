@@ -36,6 +36,7 @@ ALTERNATE_LED_STRIPS = config["alternate_led_strips"]
 GLOBAL_THREAD_POOL = concurrent.futures.ThreadPoolExecutor(max_workers=NUM_SHARDS)
 BRIGHTNESS_MULTIPLIER = min(1.0, config.get("brightness_percent", 1.0))
 BRG_ORDER = config["brg_order"]
+IS_COLUMN_ORIENTED = config["is_column_oriented"]
 
 SHOULD_REVERSE_ROWS = config["reverse_rows"]
 SHOULD_REVERSE_COLS = config["reverse_cols"]
@@ -68,7 +69,7 @@ def generate_ordered_teensy_ports():
 # ORDERED_PORTS = list(generate_ordered_teensy_ports())
 
 # mac dev only
-ORDERED_PORTS = ["/dev/tty.usbmodem1023951"]
+ORDERED_PORTS = ["/dev/tty.usbmodem1910681"]
 
 # I don't think baud rate actually matters
 BAUD_RATE = 115200
@@ -191,9 +192,15 @@ def write_frame_to_buffer(np_array):
                 _submit_frame_to_serial_interface,
                 ordered_serial_interfaces[shard_index],
                 _sharded_np_array(np_array, shard_index),
+                # _output,
+                # _sharded_np_array(np_array, shard_index),
             )
         )
     _block_for_futures(futures)
+
+
+def _output(sharded_np_array):
+    print "write frame"
 
 
 def _mutate_for_alternating_led_strips(np_array):
@@ -247,6 +254,12 @@ def _sharded_np_array(np_array, shard_index):
 
 
 def _get_image_bytes(np_array):
+    if IS_COLUMN_ORIENTED:
+        rows, cols, rgb = np_array.shape
+        columns = []
+        for col in xrange(cols):
+            columns.append(np_array[:, col, :].flatten().tobytes())
+        return "".join(columns)
     return np_array.flatten().tobytes()
 
 

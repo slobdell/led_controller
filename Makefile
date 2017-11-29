@@ -4,7 +4,11 @@ FRAME_RATE = `cat config.json | jq ".frame_rate"`
 FRAME_WIDTH = `cat config.json | jq ".total_screen_width"`
 FRAME_HEIGHT = `cat config.json | jq ".total_screen_height"`
 
+column_banner:
+	ffmpeg -i vids/output.mp4 -c:v ppm -r $(FRAME_RATE) -f rawvideo - < /dev/null | python pipe_processor.py $(FRAME_RATE)
+
 test:
+	# ffmpeg -i $(VIDEO_INPUT) -c:v ppm -r $(FRAME_RATE) -vf "scale=$(FRAME_WIDTH):ih*$(FRAME_WIDTH)/iw, crop=$(FRAME_WIDTH):$(FRAME_HEIGHT)" -f rawvideo - < /dev/null
 	ffmpeg -i $(VIDEO_INPUT) -c:v ppm -r $(FRAME_RATE) -vf "scale=$(FRAME_WIDTH):ih*$(FRAME_WIDTH)/iw, crop=$(FRAME_WIDTH):$(FRAME_HEIGHT)" -f rawvideo - < /dev/null | python pipe_processor.py $(FRAME_RATE)
 
 live:
