@@ -1,4 +1,6 @@
-VIDEO_INPUT = "vids/amon.mkv"
+# VIDEO_INPUT = "vids/pacman.mkv"
+VIDEO_INPUT = "vids/logos.mp4"
+# VIDEO_INPUT = "vids/mario.mp4"
 
 FRAME_RATE = `cat config.json | jq ".frame_rate"`
 FRAME_WIDTH = `cat config.json | jq ".total_screen_width"`

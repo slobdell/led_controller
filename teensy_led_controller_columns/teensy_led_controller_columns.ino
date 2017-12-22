@@ -62,7 +62,15 @@ int *drawBuffer;
 
 OctoWS2811 *getLedsInstance(short width_, short height_) {
   int totalLeds = width_ * height_;
-  int ledsPerStrip = totalLeds / MAX_TEENSY_STRIPS;
+  int ledsPerStrip = ((int) height_) * ((totalLeds / MAX_TEENSY_STRIPS) / (int) height_);
+
+  // ensure that signal input feed doesn't alternate location
+  int numCols = ledsPerStrip / (int) height_;
+  if (numCols % 2 == 1) {
+    ledsPerStrip -= (int) height_;
+  }
+  //int ledsPerStrip = (height_ * width_) / MAX_TEENSY_STRIPS;
+  
   displayBuffer = (int *)malloc(ledsPerStrip * 6 * sizeof(int));
   drawBuffer = (int *)malloc(ledsPerStrip * 6 * sizeof(int));
   const int CONFIGURATION = WS2811_GRB | WS2811_800kHz; // might need to cange this value

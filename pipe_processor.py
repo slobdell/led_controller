@@ -69,7 +69,7 @@ def generate_ordered_teensy_ports():
 # ORDERED_PORTS = list(generate_ordered_teensy_ports())
 
 # mac dev only
-ORDERED_PORTS = ["/dev/tty.usbmodem1910681"]
+ORDERED_PORTS = ["/dev/tty.usbmodem3422451"]
 
 # I don't think baud rate actually matters
 BAUD_RATE = 115200

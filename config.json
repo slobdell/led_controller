@@ -1,7 +1,7 @@
 {
     "num_shards": 1,
-    "total_screen_width": 200,
-    "total_screen_height": 12,
+    "total_screen_width": 150,
+    "total_screen_height": 30,
     "brightness_percent": 0.10,
     "frame_rate": 30,
     "brg_order": [0, 1, 2],
